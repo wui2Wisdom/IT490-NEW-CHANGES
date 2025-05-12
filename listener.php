@@ -226,7 +226,6 @@ try {
 }
 ?>
 
-// For systemd
 while ($channel->is_consuming()) {
     $channel->wait();
 }
