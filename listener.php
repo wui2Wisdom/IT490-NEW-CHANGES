@@ -1,18 +1,10 @@
 #!/usr/bin/php
 <?php
-/**
- * Authentication Service Listener
- *
- * This script handles user registration and login requests received through RabbitMQ.
- * It processes messages, interacts with the database, and returns responses.
- */
 
-// Load dependencies
 require_once __DIR__ . '/vendor/autoload.php';
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
-// --- Updated Configuration ---
 
 // Database configuration
 $dbConfig = [
@@ -24,13 +16,12 @@ $dbConfig = [
 
 // RabbitMQ configuration
 $mqConfig = [
-    'host' => '192.168.191.13', // YOUR VM's ZeroTier IP where RabbitMQ runs
+    'host' => '192.168.191.13', // VM ZeroTier IP where RabbitMQ runs
     'port' => 5672,             // Standard RabbitMQ AMQP port
     'user' => 'guest',          // Ensure 'guest' user can login remotely OR use a different user
     'pass' => 'guest'           // Ensure 'guest' user can login remotely OR use a different password
 ];
 
-// --- Configuration End ---
 
 
 // Connect to database (using 127.0.0.1)
@@ -46,7 +37,7 @@ try {
     die("Database connection failed: " . $e->getMessage() . "\n");
 }
 
-// Connect to RabbitMQ (using Your VM's ZeroTier IP and Port 5672)
+// Connect to RabbitMQ (using VM's ZeroTier IP and Port 5672)
 try {
     $mqConnection = new AMQPStreamConnection(
         $mqConfig['host'],
@@ -234,3 +225,8 @@ try {
     echo "Connections closed\n";
 }
 ?>
+
+// For systemd
+while ($channel->is_consuming()) {
+    $channel->wait();
+}
