@@ -13,9 +13,7 @@ require_once __DIR__ . '/logger_setup.php';
 
 // Define the log file path
 
-$logFilePath = __DIR__ . '/../logs/auth_operations.log'; // Example: logs directory one level up
-// Ensure the directory exists: mkdir(__DIR__ . '/../logs'); chmod -R 775 __DIR__ . '/../logs';
-// And ensure web server user (e.g. www-data) has write permission.
+$logFilePath = __DIR__ . '/../logs/auth_operations.log'; 
 
 // Get a logger instance for the authentication channel
 $logger = getLogger('AUTH_LOGIN', $logFilePath);
