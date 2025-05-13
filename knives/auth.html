@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create & Login Page</title>
+  <style>
+    /*
+      The asterisk (*) is a universal selector, applying these rules to all elements.
+      box-sizing: border-box; makes padding and border included in the element's total width and height.
+      This makes layout calculations easier.
+    */
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Styles for the main body of the HTML document */
+    body {
+      /* Set a common font for the text */
+      font-family: Arial, sans-serif;
+      /* Set a light background color */
+      background: #f0f2f5;
+      /* Use Flexbox to easily center the content */
+      display: flex;
+      /* Center content horizontally */
+      justify-content: center;
+      /* Center content vertically */
+      align-items: center;
+      /* Ensure the body takes up at least the full height of the viewport */
+      height: 100vh;
+      /* Remove default margin from the body */
+      margin: 0; /* Added margin: 0 for better centering */
+    }
+
+    /* Styles for the main container holding both forms */
+    .container {
+      /* White background for the container */
+      background: white;
+      /* Rounded corners */
+      border-radius: 10px;
+      /* Add a subtle shadow for depth */
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      /* Hide any content that overflows the container */
+      overflow: hidden;
+      /* Use Flexbox to arrange the form containers side-by-side */
+      display: flex;
+      /* Set a fixed width for the container on larger screens */
+      width: 800px;
+      /* Make the container responsive, taking up to 95% of the viewport width */
+      max-width: 95%; /* Added max-width for responsiveness */
+    }
+
+    /* Styles for the individual form containers (Create Account and Login) */
+    .form-container {
+      /* Allow form containers to grow and shrink within the flex container */
+      flex: 1;
+      /* Add padding inside each form container */
+      padding: 40px;
+    }
+
+    /* Styles for the headings (h2) within the form containers */
+    h2 {
+      /* Add space below the heading */
+      margin-bottom: 20px;
+      /* Set the text color */
+      color: #333;
+    }
+
+    /* Styles for text, email, and password input fields */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      /* Make input fields take the full width of their container */
+      width: 100%;
+      /* Add padding inside the input fields */
+      padding: 12px;
+      /* Add margin above and below the input fields */
+      margin: 10px 0 20px;
+      /* Add a light grey border */
+      border: 1px solid #ccc;
+      /* Rounded corners for input fields */
+      border-radius: 6px;
+    }
+
+    /* Styles for the submit buttons */
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease; /* Added transition for hover effect */
+    }
+
+    /* Styles for the buttons when the mouse hovers over them */
+    button:hover {
+      background-color: #45a049;
+    }
+
+    /* Styles for the vertical divider line between the forms */
+    .divider {
+      /* Set the width of the divider */
+      width: 1px;
+      /* Set the background color of the divider */
+      background: #ccc;
+    }
+
+    /* Media query for responsive design: apply these styles when the screen width is 768px or less */
+    @media (max-width: 768px) {
+      /* For smaller screens, change the container to stack items vertically */
+      .container {
+        flex-direction: column;
+        /* Set the width to 90% of the viewport width */
+        width: 90%;
+      }
+
+      /* Hide the divider line on smaller screens */
+      .divider {
+        display: none;
+      }
+
+      /* Added padding adjustment for smaller screens */
+      .form-container {
+          padding: 20px; /* Reduce padding on smaller screens */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+      <h2>Create Account</h2>
+      <form action="register.php" method="POST">
+        <input type="text" name="username" placeholder="Full Name" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="form-container">
+      <h2>Login</h2>
+      <form action="login.php" method="POST">
+        <input type="text" name="username" placeholder="Username or Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
