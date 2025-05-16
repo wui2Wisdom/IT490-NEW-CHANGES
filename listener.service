@@ -1,0 +1,15 @@
+#This was used for the systemd
+[Unit]
+Description=InvestZero DataBase Processor
+After=network.target
+
+[Service]
+#User="jam374it490"
+#Group="jam374it490"
+ExecStart=/usr/bin/php /home/jam374it490/git/IT490Stuff/listener3.php
+WorkingDirectory=/home/jam374it490/git/IT490Stuff
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
