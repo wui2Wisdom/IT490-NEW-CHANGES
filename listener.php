@@ -5,26 +5,20 @@ require_once __DIR__ . '/vendor/autoload.php';
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
-
-// Database configuration
 $dbConfig = [
-    'host' => '127.0.0.1', // Connect to LOCALHOST since DB is on same machine as script
-    'name' => 'IT490',     // Database name
-    'user' => 'IT490',     // DB User
-    'pass' => 'password'  // DB Password
+    'host' => '127.0.0.1',
+    'name' => 'IT490',
+    'user' => 'IT490',
+    'pass' => 'password'
 ];
 
-// RabbitMQ configuration
 $mqConfig = [
-    'host' => '192.168.191.13', // VM ZeroTier IP where RabbitMQ runs
-    'port' => 5672,             // Standard RabbitMQ AMQP port
-    'user' => 'guest',          // Ensure 'guest' user can login remotely OR use a different user
-    'pass' => 'guest'           // Ensure 'guest' user can login remotely OR use a different password
+    'host' => '192.168.191.13',
+    'port' => 5672,
+    'user' => 'guest',
+    'pass' => 'guest'
 ];
 
-
-
-// Connect to database (using 127.0.0.1)
 try {
     $dbConnection = new PDO(
         "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']}",
@@ -37,7 +31,6 @@ try {
     die("Database connection failed: " . $e->getMessage() . "\n");
 }
 
-// Connect to RabbitMQ (using VM's ZeroTier IP and Port 5672)
 try {
     $mqConnection = new AMQPStreamConnection(
         $mqConfig['host'],
@@ -51,25 +44,19 @@ try {
     die("RabbitMQ connection failed: " . $e->getMessage() . "\n");
 }
 
-// Declare message queues (ensure these exist on your RabbitMQ server)
 $mqChannel->queue_declare('registration', false, true, false, false);
 $mqChannel->queue_declare('login', false, true, false, false);
 
 echo "Waiting for messages. To exit press CTRL+C\n";
 
-/**
- * Process incoming messages from RabbitMQ
- */
 $messageHandler = function ($message) use ($dbConnection, $mqChannel) {
     $requestData = json_decode($message->body, true);
-    // Ensure $requestData is an array and username exists before accessing it
     $username = isset($requestData['username']) ? $requestData['username'] : 'unknown';
     $requestType = $message->get('routing_key');
     $response = [];
 
     echo "Received {$requestType} request for user: {$username}\n";
 
-    // Basic validation
     if (!is_array($requestData) || !isset($requestData['username']) || !isset($requestData['password'])) {
          $response = ['success' => false, 'message' => 'Invalid request format'];
     } elseif ($requestType === 'registration') {
@@ -79,8 +66,6 @@ $messageHandler = function ($message) use ($dbConnection, $mqChannel) {
     } else {
          $response = ['success' => false, 'message' => 'Unknown request type'];
     }
-
-    // Send response back to client if reply_to is set
 
     $replyTo = $message->has('reply_to') ? $message->get('reply_to') : null;
     $correlationId = $message->has('correlation_id') ? $message->get('correlation_id') : null;
@@ -97,23 +82,15 @@ $messageHandler = function ($message) use ($dbConnection, $mqChannel) {
         echo "No reply_to or correlation_id found, skipping response.\n";
     }
 
-
-    // Acknowledge the message was processed
-    $message->ack(); // Use basic_ack if auto-ack (fourth param in basic_consume) is false
+    $message->ack();
     echo "Message acknowledged.\n";
-
 };
 
-/**
- * Handle user registration requests
- */
 function handleRegistration($db, $userData) {
-    // Basic validation
     if (empty($userData['username']) || empty($userData['password'])) {
         return ['success' => false, 'message' => 'Username and password cannot be empty'];
     }
     try {
-        // Check if username already exists
         $checkStmt = $db->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
         $checkStmt->execute(['username' => $userData['username']]);
 
@@ -121,7 +98,6 @@ function handleRegistration($db, $userData) {
             return ['success' => false, 'message' => 'Username already exists'];
         }
 
-        // Create new user
         $insertStmt = $db->prepare(
             "INSERT INTO users (username, password_hash) VALUES (:username, :password_hash)"
         );
@@ -136,54 +112,36 @@ function handleRegistration($db, $userData) {
             'message' => "User registered successfully: {$userData['username']}"
         ];
     } catch (PDOException $e) {
-        // Log detailed error on server, return generic message to client
         error_log("Registration failed: {$e->getMessage()}");
         return ['success' => false, 'message' => "Registration process failed."];
     }
 }
 
-/**
- * Handle user login requests
- */
 function handleLogin($db, $userData) {
-     // Basic validation
     if (empty($userData['username']) || empty($userData['password'])) {
-        echo "Listener (Login): Username or password empty.\n"; // Debug listener point L0
         return ['success' => false, 'message' => 'Username and password cannot be empty'];
     }
 
-    echo "Listener (Login): Received username '{$userData['username']}' and password (masked).\n"; // Debug listener point L1
-
     try {
-        // Find user by username
-        echo "Listener (Login): Preparing DB query for username: {$userData['username']}.\n"; // Debug listener point L2
         $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
         $stmt->execute(['username' => $userData['username']]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user) {
-            echo "Listener (Login): User found in DB. User ID: {$user['id']}.\n"; // Debug listener point L3
-            // Verify credentials
-            echo "Listener (Login): Verifying password using password_verify().\n"; // Debug listener point L4
             if (password_verify($userData['password'], $user['password_hash'])) {
-                echo "Listener (Login): Password verification successful.\n"; // Debug listener point L5
-                // Generate session
                 $sessionKey = bin2hex(random_bytes(16));
                 $expiryTime = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
 
-                // NOTE: Assumes a 'sessions' table exists. Adapt if needed.
-                echo "Listener (Login): Preparing to insert session for user ID: {$user['id']}.\n"; // Debug listener point L6
                 $sessionStmt = $db->prepare(
                     "INSERT INTO sessions (user_id, session_key, expires_at)
                      VALUES (:user_id, :session_key, :expires_at)"
                 );
 
                 $sessionStmt->execute([
-                    'user_id' => $user['id'], // Assumes 'id' is the primary key column name
+                    'user_id' => $user['id'],
                     'session_key' => $sessionKey,
                     'expires_at' => $expiryTime
                 ]);
-                echo "Listener (Login): Session inserted successfully.\n"; // Debug listener point L7
 
                 return [
                     'success' => true,
@@ -191,27 +149,20 @@ function handleLogin($db, $userData) {
                     'username' => $user['username']
                 ];
             } else {
-                echo "Listener (Login): Password verification failed for user {$userData['username']}.\n"; // Debug listener point L8
                 return ['success' => false, 'message' => 'Invalid username or password'];
             }
         } else {
-            echo "Listener (Login): User '{$userData['username']}' not found in DB.\n"; // Debug listener point L9
             return ['success' => false, 'message' => 'Invalid username or password'];
         }
     } catch (PDOException $e) {
-        echo "Listener (Login): Caught DB exception: " . $e->getMessage() . "\n"; // Debug listener point L10
         error_log("Login failed: {$e->getMessage()}");
         return ['success' => false, 'message' => "Login process failed."];
     }
 }
 
-// Start consuming messages
-// Set auto-ack (4th param) to false - we will manually acknowledge after processing
 $mqChannel->basic_consume('registration', '', false, false, false, false, $messageHandler);
 $mqChannel->basic_consume('login', '', false, false, false, false, $messageHandler);
 
-
-// Keep the script running until interrupted
 try {
     while ($mqChannel->is_consuming()) {
         $mqChannel->wait();
@@ -219,7 +170,6 @@ try {
 } catch (Exception $e) {
     echo "Error during wait: " . $e->getMessage() . "\n";
 } finally {
-    // Clean up connections
     $mqChannel->close();
     $mqConnection->close();
     echo "Connections closed\n";
